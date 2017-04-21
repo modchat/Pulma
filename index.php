@@ -11,66 +11,46 @@ function newXML() {
 	for ($h = 0; $h < $height; $h++) {
 		for ($w = 0; $w < $width; $w++) {
 			$tile = $board->appendChild($xml->createElement("tile"));
-			if (!!!random_int(0, 14)) {
+			if (!!!random_int(0, 8)) {
 				$unit = $tile->appendChild($xml->createElement("unit"));
 				$unit->setAttribute("type", "cat");
+				if (!!!random_int(0, 8)) {
+					$unit->setAttribute("type", "dog");
+				}
 			}
 		}
 	}
 	$xml->save("txml.xml");
 }
 
-//Read xml board
-function readXML() {
-	$dom = new DOMDocument();
-	if ($dom->load("txml.xml")) {
-		return $dom;
-	}
-	return false;
-}
-
-$dom = readXML();
+$dom = new DOMDocument();
+$units = new DOMDocument();
+$dom->load("txml.xml");
+$units->load("units.xml");
 $board = $dom->getElementsByTagName("board")->item(0);
 $width = $board->getAttribute("width");
 $height = $board->getAttribute("height");
 
-class unit {
-	public $name = 'Tom';
-	
-	private $type = 'blank';
-	public $short = '..';
-	private $health = 5;
-	private $cHealth = 5;
-	private $strength = 5;
-	private $resistance = 2;
-	
-	private $x = 0;
-	private $y = 0;
-	
-	function __construct($x, $y) {
-		$this->x = $x;
-		$this->y = $y;
-		
-		$this->name = 'Tom';//RANDOMIZE
-	}
-	
-	function __destruct() {}
-	function destroy() { $this->__destruct(); }
-	
-	function getType() { return $this->type; }
-	function getHP() { return $this->cHealth; }
-	function getMHP() { return $this->health; }
-	function getAtt() { return $this->strength; }
-	function getDef() { return $this->resistance; }
+function getTile($x, $y) {
+	global $board, $width;
+	return $board->getElementsByTagName("tile")->item(($y*$width)+$x)->getElementsByTagName("unit")->length==0?false:$board->getElementsByTagName("tile")->item(($y*$width)+$x);
 }
 
-class cat extends unit {
-	private $type = 'cat';
-	public $short = 'CAT';
-	private $health = 2;
-	private $cHealth = 2;
-	private $strength = 8;
-	private $resistance = 1;
+function getUnit($t) {
+	global $units;
+	$xpath = new DomXpath($units);
+	return $xpath->query('//unit[@name="'.$t.'"][1]')->item(0);
+}
+
+function getNextUnit($t) {
+	global $units;
+	preg_match_all("/\[([^\]]*)\]/", getUnit($t)->getNodePath(), $matches);
+	return getUnit($t)->parentNode->getElementsByTagName("unit")->item(end($matches[1]));
+}
+
+//misc/oneoff functions
+function getShortFromTile($x, $y) {
+	return !!getTile($x, $y)?getUnit(getTile($x, $y)->getElementsByTagName("unit")->item(0)->getAttribute("type"))->getElementsByTagName("short")->item(0)->nodeValue:"";
 }
 ?>
 <!DOCTYPE html>
@@ -84,9 +64,9 @@ class cat extends unit {
 		<div id="header"></div>
 		<div id="content">
 			<?php
-			for ($h = 0; $h < $height; $h++) {
-				for ($w = 0; $w < $width; $w++) {
-					echo "<span class=\"tile\" id=\"".$h."_".$w."\"><span class=\"text\">".($board->getElementsByTagName("tile")->item(($h*$width)+$w)->getElementsByTagName("unit")->length==0?"":$board->getElementsByTagName("tile")->item(($h*$width)+$w)->getElementsByTagName("unit")->item(0)->getAttribute("type"))."</span></span>";
+			for ($y = 0; $y < $height; $y++) {
+				for ($x = 0; $x < $width; $x++) {
+					echo "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">".getShortFromTile($x, $y)"</span></span>";
 				}
 				echo "<br>";
 			}

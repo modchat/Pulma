@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<path name="animal">
+	<unit name="cat">
+		<short>CAT</short>
+		<strength>8</strength>
+		<health>10</health>
+		<resistance>3</resistance>
+	</unit>
+	<unit name="dog">
+		<short>DOG</short>
+		<strength>10</strength>
+		<health>15</health>
+		<resistance>5</resistance>
+	</unit>
+</path>
