@@ -2,6 +2,8 @@
 function updateBoard() {
 	global $dom;
 	$dom = new DOMDocument();
+	$dom->formatOutput = true;
+	$dom->preserveWhiteSpace = false;
 	$dom->load("txml.xml");
 }
 
@@ -23,15 +25,32 @@ function getUnit($t) {
 	return $xpath->query('//unit[@name="'.$t.'"][1]')->item(0);
 }
 
+function getUnitStat($t, $s) {
+	global $units;
+	$xpath = new DomXpath($units);
+	return $xpath->query('//unit[@name="'.$t.'"][1]')->item(0)->getElementsByTagName($s)->item(0)->nodeValue;
+}
+
 //misc/oneoff functions
 function printBoard() {
-	global $height, $width;
+	global $board, $height, $width;
+	$return = "";
 	for ($y = 0; $y < $height; $y++) {
 		for ($x = 0; $x < $width; $x++) {
-			echo "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">".(!!getTile($x, $y)?getUnit(getTile($x, $y)->getElementsByTagName("unit")->item(0)->getAttribute("type"))->getElementsByTagName("short")->item(0)->nodeValue:"")."</span></span>";
+			$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">";
+			$condition = $board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0;
+			if ($condition) {
+				$unit = getTile($x, $y)->getElementsByTagName("unit")->item(0);
+				$return .= getUnitStat($unit->getAttribute("type"), "short");
+			}
+			$return .= "<br>";
+			if ($condition)
+				$return .= $unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health");
+			$return .= "</span></span>";
 		}
-		echo "<br>";
+		$return .= "<br>";
 	}
+	echo $return;
 }
 ?>
 <!DOCTYPE html>

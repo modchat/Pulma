@@ -4,10 +4,14 @@ if (isset($_POST['command'])) {
 	
 	//XML
 	
+	$XML_FILE = "txml.xml";
+	
 	function updateBoard() {
-		global $dom;
+		global $dom, $XML_FILE;
 		$dom = new DOMDocument();
-		$dom->load("txml.xml");
+		$dom->formatOutput = true;
+		$dom->preserveWhiteSpace = false;
+		$dom->load($XML_FILE);
 	}
 	
 	updateBoard();
@@ -27,15 +31,24 @@ if (isset($_POST['command'])) {
 	
 	function funcParams() {
 		global $_POST;
-		return explode(",", explode("(", str_replace(array("(", ")"), "(", $_POST['command']))[1]);
+		return explode(",", explode("(", str_replace(array("(", ")"), "(", str_replace(" ", "", $_POST['command'])))[1]);
 	}
 	
 	function printBoard() {
-		global $height, $width;
+		global $board, $height, $width;
 		$return = "";
 		for ($y = 0; $y < $height; $y++) {
 			for ($x = 0; $x < $width; $x++) {
-				$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">".(!!getTile($x, $y)?getUnit(getTile($x, $y)->getElementsByTagName("unit")->item(0)->getAttribute("type"))->getElementsByTagName("short")->item(0)->nodeValue:"")."</span></span>";
+				$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">";
+				$condition = $board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0;
+				if ($condition) {
+					$unit = getTile($x, $y)->getElementsByTagName("unit")->item(0);
+					$return .= getUnitStat($unit->getAttribute("type"), "short");
+				}
+				$return .= "<br>";
+				if ($condition)
+					$return .= $unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health");
+				$return .= "</span></span>";
 			}
 			$return .= "<br>";
 		}
@@ -46,6 +59,7 @@ if (isset($_POST['command'])) {
 	//XML functions
 	
 	function newXML() {
+		global $XML_FILE;
 		$width = 14;
 		$height = 6;
 		$xml = new DOMDocument();
@@ -65,18 +79,24 @@ if (isset($_POST['command'])) {
 				}
 			}
 		}
-		$xml->save("txml.xml");
+		$xml->save($XML_FILE);
 	}
 
 	function getTile($x, $y) {
 		global $board, $width;
-		return $board->getElementsByTagName("tile")->item(($y*$width)+$x)->getElementsByTagName("unit")->length==0?false:$board->getElementsByTagName("tile")->item(($y*$width)+$x);
+		return $board->getElementsByTagName("tile")->item(($y*$width)+$x);
 	}
 
 	function getUnit($t) {
 		global $units;
 		$xpath = new DomXpath($units);
 		return $xpath->query('//unit[@name="'.$t.'"][1]')->item(0);
+	}
+	
+	function getUnitStat($t, $s) {
+		global $units;
+		$xpath = new DomXpath($units);
+		return $xpath->query('//unit[@name="'.$t.'"][1]')->item(0)->getElementsByTagName($s)->item(0)->nodeValue;
 	}
 
 	function getNextUnit($t) {
@@ -85,16 +105,65 @@ if (isset($_POST['command'])) {
 		return getUnit($t)->parentNode->getElementsByTagName("unit")->item(end($matches[1]));
 	}
 	
+	//MISC
+	function limit ($v) { return $v < 0 ? 0 : $v; }
+	
 	if (funcName() == "upgrade") {
-		global $dom;
 		getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0)->setAttribute("type", getNextUnit(getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0)->getAttribute("type"))->getAttribute("name"));
-		$dom->save("txml.xml");
+		$dom->save($XML_FILE);
 		echo printBoard();
 	} else if (funcName() == "new") {
 		newXML();
 		updateBoard();
 		echo printBoard();
 	} else if (funcName() == "update") {
+		echo printBoard();
+	} else if (funcName() == "move") {
+		$tile1 = getTile(funcParams()[0], funcParams()[1]);
+		$tile2 = getTile(funcParams()[2], funcParams()[3]);
+		
+		if ($tile1->getElementsByTagName("unit")->length == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[0].", ".funcParams()[1]."]";
+			exit();
+		} else if ($tile2->getElementsByTagName("unit")->length != 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): Cannot move unit at [".funcParams()[0].", ".funcParams()[1]."] to [".funcParams()[2].", ".funcParams()[3]."] as there is a unit located there";
+			exit();
+		} else if ($tile1 == $tile2) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): [".funcParams()[0].", ".funcParams()[1]."] and [".funcParams()[2].", ".funcParams()[3]."] are the same!";
+			exit();
+		} 
+		
+		$unitNode = $tile1->getElementsByTagName("unit")->item(0);
+		$tile2->appendChild($unitNode);
+		$dom->save($XML_FILE);
+		updateBoard();
+		echo printBoard();
+	} else if (funcName() == "attack") {
+		$tile1 = getTile(funcParams()[0], funcParams()[1]);
+		$tile2 = getTile(funcParams()[2], funcParams()[3]);
+		
+		if ($tile1->getElementsByTagName("unit")->length == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[0].", ".funcParams()[1]."]";
+			exit();
+		} else if ($tile2->getElementsByTagName("unit")->length == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[2].", ".funcParams()[3]."]";
+			exit();
+		} else if ($tile1 == $tile2) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): [".funcParams()[0].", ".funcParams()[1]."] and [".funcParams()[2].", ".funcParams()[3]."] are the same!";
+			exit();
+		}
+		
+		$unit1 = $tile1->getElementsByTagName("unit")->item(0);
+		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
+		
+		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "resistance")));
+		if ($unit2->getAttribute("hp") <= 0) {
+			//DESTROYED!
+			$tile2->removeChild($unit2);
+		}
+		
+		$dom->save($XML_FILE);
+		updateBoard();
 		echo printBoard();
 	} else {
 		//echo printBoard()."<img src=\"_.png\" onload=\"console.error('PHP: Invalid command passed in php(): ".$_POST['command']."');alert('PHP: Invalid command passed in php(): ".$_POST['command']."');this.parentNode.removeChild(this);\" />";
