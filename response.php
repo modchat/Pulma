@@ -109,7 +109,11 @@ if (isset($_POST['command'])) {
 	function limit ($v) { return $v < 0 ? 0 : $v; }
 	
 	if (funcName() == "upgrade") {
-		getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0)->setAttribute("type", getNextUnit(getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0)->getAttribute("type"))->getAttribute("name"));
+		$unit = getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0);
+		$type = $unit->getAttribute("type");
+		$unit->setAttribute("type", getNextUnit($type)->getAttribute("name"));
+		if ($unit->hasAttribute("hp"))
+			$unit->setAttribute("hp", $unit->getAttribute("hp") + limit(getUnitStat($unit->getAttribute("type"), "health") - getUnitStat($type, "health")));
 		$dom->save($XML_FILE);
 		echo printBoard();
 	} else if (funcName() == "new") {
@@ -128,7 +132,10 @@ if (isset($_POST['command'])) {
 		} else if ($tile2->getElementsByTagName("unit")->length != 0) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): Cannot move unit at [".funcParams()[0].", ".funcParams()[1]."] to [".funcParams()[2].", ".funcParams()[3]."] as there is a unit located there";
 			exit();
-		} else if ($tile1 == $tile2) {
+		} else if (abs(funcParams()[0] - funcParams()[2]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed") || abs(funcParams()[1] - funcParams()[3]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed")) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): The tile at [".funcParams()[1].", ".funcParams()[2]."] is too far from the unit at [".funcParams()[0].", ".funcParams()[1]."] to move to";
+			exit();
+		} else if (funcParams()[0] == funcParams()[2] && funcParams()[1] == funcParams()[3]) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): [".funcParams()[0].", ".funcParams()[1]."] and [".funcParams()[2].", ".funcParams()[3]."] are the same!";
 			exit();
 		} 
@@ -148,7 +155,10 @@ if (isset($_POST['command'])) {
 		} else if ($tile2->getElementsByTagName("unit")->length == 0) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[2].", ".funcParams()[3]."]";
 			exit();
-		} else if ($tile1 == $tile2) {
+		} else if (abs(funcParams()[0] - funcParams()[2]) > 1 || abs(funcParams()[1] - funcParams()[3]) > 1) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): Unit at [".funcParams()[0].", ".funcParams()[1]."] is too far from the unit at unit at [".funcParams()[2].", ".funcParams()[3]."]";
+			exit();
+		} else if (funcParams()[0] == funcParams()[2] && funcParams()[1] == funcParams()[3]) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): [".funcParams()[0].", ".funcParams()[1]."] and [".funcParams()[2].", ".funcParams()[3]."] are the same!";
 			exit();
 		}
@@ -156,7 +166,40 @@ if (isset($_POST['command'])) {
 		$unit1 = $tile1->getElementsByTagName("unit")->item(0);
 		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
 		
-		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "resistance")));
+		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "defence")));
+		if ($unit2->getAttribute("hp") <= 0) {
+			//DESTROYED!
+			$tile2->removeChild($unit2);
+		}
+		
+		$dom->save($XML_FILE);
+		updateBoard();
+		echo printBoard();
+	} else if (funcName() == "bombard") {
+		$tile1 = getTile(funcParams()[0], funcParams()[1]);
+		$tile2 = getTile(funcParams()[2], funcParams()[3]);
+		
+		if ($tile1->getElementsByTagName("unit")->length == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[0].", ".funcParams()[1]."]";
+			exit();
+		} else if ($tile2->getElementsByTagName("unit")->length == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): No unit at [".funcParams()[2].", ".funcParams()[3]."]";
+			exit();
+		} else if (getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "range") == 0) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): The unit at [".funcParams()[0].", ".funcParams()[1]."] is incapable of bombarding!";
+			exit();
+		} else if (abs(funcParams()[0] - funcParams()[2]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "range") || abs(funcParams()[1] - funcParams()[3]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "range")) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): Unit at [".funcParams()[0].", ".funcParams()[1]."] is too far from the unit at unit at [".funcParams()[2].", ".funcParams()[3]."]";
+			exit();
+		} else if (funcParams()[0] == funcParams()[2] && funcParams()[1] == funcParams()[3]) {
+			echo printBoard()."php(\"".$_POST["command"]."\"): [".funcParams()[0].", ".funcParams()[1]."] and [".funcParams()[2].", ".funcParams()[3]."] are the same!";
+			exit();
+		}
+		
+		$unit1 = $tile1->getElementsByTagName("unit")->item(0);
+		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
+		
+		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "bombard") - getUnitStat($unit2->getAttribute("type"), "resistance")));
 		if ($unit2->getAttribute("hp") <= 0) {
 			//DESTROYED!
 			$tile2->removeChild($unit2);
@@ -167,7 +210,7 @@ if (isset($_POST['command'])) {
 		echo printBoard();
 	} else {
 		//echo printBoard()."<img src=\"_.png\" onload=\"console.error('PHP: Invalid command passed in php(): ".$_POST['command']."');alert('PHP: Invalid command passed in php(): ".$_POST['command']."');this.parentNode.removeChild(this);\" />";
-		echo "Invalid command passed: php(\"".$_POST['command']."\")";
+		echo printBoard()."php(\"".$_POST['command']."\"): Invalid command passed";
 	}
 } else { echo "ERR"; }
 ?>
