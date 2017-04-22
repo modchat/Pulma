@@ -40,14 +40,21 @@ if (isset($_POST['command'])) {
 		for ($y = 0; $y < $height; $y++) {
 			for ($x = 0; $x < $width; $x++) {
 				$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">";
-				$condition = $board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0;
-				if ($condition) {
+				if ($board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0) {
 					$unit = getTile($x, $y)->getElementsByTagName("unit")->item(0);
 					$return .= getUnitStat($unit->getAttribute("type"), "short");
+					$return .= "<br>";
+					$return .= "<span class='stats'>";
+					$return .= "Strength: ".getUnitStat($unit->getAttribute("type"), "strength").($unit->hasAttribute("att") ? " + ".$unit->getAttribute("att") : "")."<br>";
+					$return .= "Defence: ".getUnitStat($unit->getAttribute("type"), "defence").($unit->hasAttribute("def") ? " + ".$unit->getAttribute("def") : "")."<br><br>";
+					$return .= "Bombard: ".getUnitStat($unit->getAttribute("type"), "bombard").($unit->hasAttribute("bom") ? " + ".$unit->getAttribute("bom") : "")."<br>";
+					$return .= "Resistance: ".getUnitStat($unit->getAttribute("type"), "resistance").($unit->hasAttribute("res") ? " + ".$unit->getAttribute("res") : "")."<br><br>";
+					$return .= "Speed: ".getUnitStat($unit->getAttribute("type"), "speed").($unit->hasAttribute("spd") ? " + ".$unit->getAttribute("spd") : "")."<br>";
+					$return .= "Range: ".getUnitStat($unit->getAttribute("type"), "range").($unit->hasAttribute("dst") ? " + ".$unit->getAttribute("dst") : "")."<br><br>";
+					$return .= "XP: ".($unit->hasAttribute("xp") ? $unit->getAttribute("xp") : 0)."/".getUnitStat($unit->getAttribute("type"), "levelXP");
+					$return .= "</span>";
+					$return .= ($unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health"))."/".getUnitStat($unit->getAttribute("type"), "health");
 				}
-				$return .= "<br>";
-				if ($condition)
-					$return .= $unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health");
 				$return .= "</span></span>";
 			}
 			$return .= "<br>";
@@ -105,12 +112,23 @@ if (isset($_POST['command'])) {
 		return getUnit($t)->parentNode->getElementsByTagName("unit")->item(end($matches[1]));
 	}
 	
+	function calcXP($d, $t) {
+		$d .= $d == "attack" ? "XP" : "";
+		$d .= $d == "bombard" ? "XP" : "";
+		$d .= $d == "destroy" ? "XP" : "";
+		if ($d != "attackXP" && $d != "bombardXP" && $d != "destroyXP") { return false; }
+		return getUnitStat($t, $d);
+	}
+	
 	//MISC
 	function limit ($v) { return $v < 0 ? 0 : $v; }
 	
-	if (funcName() == "upgrade") {
+	if (funcName() == "promote") {
 		$unit = getTile(funcParams()[0], funcParams()[1])->getElementsByTagName("unit")->item(0);
 		$type = $unit->getAttribute("type");
+		if (($unit->hasAttribute("xp") ? $unit->getAttribute("xp") : 0) < getUnitStat($type, "levelXP")) { echo printBoard(); exit(); }
+		$xp = $unit->getAttribute("xp");
+		$unit->setAttribute("xp", $xp - getUnitStat($type, "levelXP"));
 		$unit->setAttribute("type", getNextUnit($type)->getAttribute("name"));
 		if ($unit->hasAttribute("hp"))
 			$unit->setAttribute("hp", $unit->getAttribute("hp") + limit(getUnitStat($unit->getAttribute("type"), "health") - getUnitStat($type, "health")));
@@ -132,7 +150,7 @@ if (isset($_POST['command'])) {
 		} else if ($tile2->getElementsByTagName("unit")->length != 0) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): Cannot move unit at [".funcParams()[0].", ".funcParams()[1]."] to [".funcParams()[2].", ".funcParams()[3]."] as there is a unit located there";
 			exit();
-		} else if (abs(funcParams()[0] - funcParams()[2]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed") || abs(funcParams()[1] - funcParams()[3]) > getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed")) {
+		} else if (abs(funcParams()[0] - funcParams()[2]) > (getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed") + ($tile1->getElementsByTagName("unit")->item(0)->hasAttribute("dst") ? $tile1->getElementsByTagName("unit")->item(0)->getAttribute("dst") : 0)) || abs(funcParams()[1] - funcParams()[3]) > (getUnitStat($tile1->getElementsByTagName("unit")->item(0)->getAttribute("type"), "speed") + ($tile1->getElementsByTagName("unit")->item(0)->hasAttribute("dst") ? $tile1->getElementsByTagName("unit")->item(0)->getAttribute("dst") : 0))) {
 			echo printBoard()."php(\"".$_POST["command"]."\"): The tile at [".funcParams()[1].", ".funcParams()[2]."] is too far from the unit at [".funcParams()[0].", ".funcParams()[1]."] to move to";
 			exit();
 		} else if (funcParams()[0] == funcParams()[2] && funcParams()[1] == funcParams()[3]) {
@@ -166,10 +184,16 @@ if (isset($_POST['command'])) {
 		$unit1 = $tile1->getElementsByTagName("unit")->item(0);
 		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
 		
-		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "defence")));
+		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "defence") + ($unit1->hasAttribute("att") ? $unit1->getAttribute("att") : 0) - ($unit2->hasAttribute("def") ? $unit2->getAttribute("def") : 0)));
 		if ($unit2->getAttribute("hp") <= 0) {
 			//DESTROYED!
 			$tile2->removeChild($unit2);
+			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;
+			$unit1->setAttribute("xp", $xp + calcXP("destroy", $unit1->getAttribute("type")) + ($unit1->hasAttribute("killXP") ? $unit1->getAttribute("killXP") : 0));
+		} else {
+			//ATTACKED!
+			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;
+			$unit1->setAttribute("xp", $xp + calcXP("attack", $unit1->getAttribute("type")) + ($unit1->hasAttribute("attXP") ? $unit1->getAttribute("attXP") : 0));
 		}
 		
 		$dom->save($XML_FILE);
@@ -199,10 +223,16 @@ if (isset($_POST['command'])) {
 		$unit1 = $tile1->getElementsByTagName("unit")->item(0);
 		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
 		
-		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "bombard") - getUnitStat($unit2->getAttribute("type"), "resistance")));
+		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "bombard") - getUnitStat($unit2->getAttribute("type"), "resistance") + ($unit1->hasAttribute("bom") ? $unit1->getAttribute("bom") : 0) - ($unit2->hasAttribute("res") ? $unit2->getAttribute("res") : 0)));
 		if ($unit2->getAttribute("hp") <= 0) {
 			//DESTROYED!
 			$tile2->removeChild($unit2);
+			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;
+			$unit1->setAttribute("xp", $xp + calcXP("destroy", $unit1->getAttribute("type")) + ($unit1->hasAttribute("killXP") ? $unit1->getAttribute("killXP") : 0));
+		} else {
+			//ATTACKED!
+			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;
+			$unit1->setAttribute("xp", $xp + calcXP("bombard", $unit1->getAttribute("type")) + ($unit1->hasAttribute("attXP") ? $unit1->getAttribute("attXP") : 0));
 		}
 		
 		$dom->save($XML_FILE);

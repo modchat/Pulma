@@ -38,14 +38,21 @@ function printBoard() {
 	for ($y = 0; $y < $height; $y++) {
 		for ($x = 0; $x < $width; $x++) {
 			$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">";
-			$condition = $board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0;
-			if ($condition) {
+			if ($board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0) {
 				$unit = getTile($x, $y)->getElementsByTagName("unit")->item(0);
 				$return .= getUnitStat($unit->getAttribute("type"), "short");
+				$return .= "<br>";
+				$return .= "<span class='stats'>";
+				$return .= "Strength: ".getUnitStat($unit->getAttribute("type"), "strength").($unit->hasAttribute("att") ? " + ".$unit->getAttribute("att") : "")."<br>";
+				$return .= "Defence: ".getUnitStat($unit->getAttribute("type"), "defence").($unit->hasAttribute("def") ? " + ".$unit->getAttribute("def") : "")."<br><br>";
+				$return .= "Bombard: ".getUnitStat($unit->getAttribute("type"), "bombard").($unit->hasAttribute("bom") ? " + ".$unit->getAttribute("bom") : "")."<br>";
+				$return .= "Resistance: ".getUnitStat($unit->getAttribute("type"), "resistance").($unit->hasAttribute("res") ? " + ".$unit->getAttribute("res") : "")."<br><br>";
+				$return .= "Speed: ".getUnitStat($unit->getAttribute("type"), "speed").($unit->hasAttribute("spd") ? " + ".$unit->getAttribute("spd") : "")."<br>";
+				$return .= "Range: ".getUnitStat($unit->getAttribute("type"), "range").($unit->hasAttribute("dst") ? " + ".$unit->getAttribute("dst") : "")."<br><br>";
+				$return .= "XP: ".($unit->hasAttribute("xp") ? $unit->getAttribute("xp") : 0)."/".getUnitStat($unit->getAttribute("type"), "levelXP");
+				$return .= "</span>";
+				$return .= ($unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health"))."/".getUnitStat($unit->getAttribute("type"), "health");
 			}
-			$return .= "<br>";
-			if ($condition)
-				$return .= $unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health");
 			$return .= "</span></span>";
 		}
 		$return .= "<br>";

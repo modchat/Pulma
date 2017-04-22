@@ -3,32 +3,74 @@
 <path name="animal">
 	<unit name="cat">
 		<short>CAT</short>
+		
 		<strength>8</strength>
 		<bombard>0</bombard>
 		<range>0</range>
+		
 		<health>10</health>
 		<resistance>7</resistance>
 		<defence>3</defence>
+		
 		<speed>2</speed>
+		
+		<attackXP>10</attackXP>
+		<bombardXP>60</bombardXP>
+		<destroyXP>100</destroyXP>
+		<levelXP>150</levelXP>
 	</unit>
 	<unit name="dog">
 		<short>DOG</short>
+		
 		<strength>10</strength>
 		<bombard>0</bombard>
 		<range>0</range>
+		
 		<health>14</health>
 		<resistance>4</resistance>
 		<defence>5</defence>
-		<speed>1</speed>
+		
+		<speed>3</speed>
+		
+		<attackXP>15</attackXP>
+		<bombardXP>100</bombardXP>
+		<destroyXP>160</destroyXP>
+		<levelXP>200</levelXP>
 	</unit>
 	<unit name="bird">
 		<short>BIRD</short>
+		
 		<strength>7</strength>
 		<bombard>10</bombard>
 		<range>3</range>
+		
 		<health>6</health>
 		<resistance>4</resistance>
 		<defence>8</defence>
+		
 		<speed>2</speed>
+		
+		<attackXP>42</attackXP>
+		<bombardXP>32</bombardXP>
+		<destroyXP>94</destroyXP>
+		<levelXP>350</levelXP>
+	</unit>
+	<unit name="eagle">
+		<short>EAGLE</short>
+		
+		<strength>20</strength>
+		<bombard>6</bombard>
+		<range>4</range>
+		
+		<health>18</health>
+		<resistance>8</resistance>
+		<defence>6</defence>
+		
+		<speed>4</speed>
+		
+		<attackXP>80</attackXP>
+		<bombardXP>20</bombardXP>
+		<destroyXP>180</destroyXP>
+		<levelXP>350</levelXP>
 	</unit>
 </path>

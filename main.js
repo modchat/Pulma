@@ -23,3 +23,24 @@ function php(command) {
 	ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	ajax.send("command="+command);
 }
+
+function newBoard() {
+	php("new");
+	php("update");
+}
+
+function updateBoard() {
+	php("update");
+}
+
+function moveUnit(x1, y1, x2, y2) {
+	php("move(" + x1 + "," + y1 + "," + x2 + "," + y2 + ")");
+}
+
+function attackUnit(type, x1, y1, x2, y2) {
+	type = type.toLowerCase() == "attack" || type.toLowerCase() == "att" || type.toLowerCase() == "a" ? "attack" : type;
+	type = type.toLowerCase() == "range" || type.toLowerCase() == "rng" || type.toLowerCase() == "r" ? "bombard" : type;
+	type = type.toLowerCase() == "bombard" || type.toLowerCase() == "bomb" || type.toLowerCase() == "b" ? "bombard" : type;
+	if (type != "attack" && type != "bombard") { console.error("attackUnit(): Invalid attack type '" + type + "'"); return false; }
+	php(type + "(" + x1 + "," + y1 + "," + x2 + "," + y2 + ")");
+}

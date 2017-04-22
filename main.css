@@ -1,6 +1,7 @@
-span.tile {
+.tile {
 	--width: 64px;
 	--height: 64px;
+	--popupRGBA: rgba(0, 0, 0, 0.35);
 	
 	display: inline-block;
 	width: var(--width);
@@ -12,9 +13,42 @@ span.tile {
 	border-color: black;
 }
 
-span.text {
+.text {
+	position: relative;
 	display: inline-block;
 	vertical-align: middle;
-	line-height: 32px;        /* HALF OF var(--height) */
+	line-height: 32px;        /* 1/2 OF var(--height) */
 	height: var(--height);
+	font-size: 12px;
+}
+
+.text .stats {
+	visibility: hidden;
+	width: 120px;
+	background-color: var(--popupRGBA);
+	color: #fff;
+	text-align: center;
+	border-radius: 6px;
+	padding: 5px 0;
+	position: absolute;
+	line-height: normal;
+	z-index: 1;
+	top: 104%;
+	left: 50%;
+	margin-left: -60px;
+}
+
+.text .stats::after {
+	content: " ";
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	margin-left: -10px;
+	border-width: 10px;
+	border-style: solid;
+	border-color: transparent transparent var(--popupRGBA) transparent;
+}
+
+.text:hover .stats {
+	visibility: visible;
 }
