@@ -39,12 +39,13 @@ if (isset($_POST['command'])) {
 		$return = "";
 		for ($y = 0; $y < $height; $y++) {
 			for ($x = 0; $x < $width; $x++) {
-				$return .= "<span class=\"tile\" id=\"".$y."_".$x."\"><span class=\"text\">";
+				$return .= "<span class=\"tile\" id=\"".$y."_".$x."\" onclick=\"tileClick(this, 1);\" oncontextmenu=\"tileClick(this, 0);return false;\" ondblclick=\"php('promote(".$x.",".$y.")')\"><span class=\"text\">";
 				if ($board->getElementsByTagName("tile")->item(($y * $width) + $x)->getElementsByTagName("unit")->length != 0) {
 					$unit = getTile($x, $y)->getElementsByTagName("unit")->item(0);
 					$return .= getUnitStat($unit->getAttribute("type"), "short");
 					$return .= "<br>";
-					$return .= "<span class='stats'>";
+					$return .= "<span class=\"stats\">";
+					$return .= "HP: ".($unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health")).($unit->hasAttribute("hpInc") ? " (+".$unit->getAttribute("hpInc").")" : "")." / ".getUnitStat($unit->getAttribute("type"), "health")."<br><br>";
 					$return .= "Strength: ".getUnitStat($unit->getAttribute("type"), "strength").($unit->hasAttribute("att") ? " + ".$unit->getAttribute("att") : "")."<br>";
 					$return .= "Defence: ".getUnitStat($unit->getAttribute("type"), "defence").($unit->hasAttribute("def") ? " + ".$unit->getAttribute("def") : "")."<br><br>";
 					$return .= "Bombard: ".getUnitStat($unit->getAttribute("type"), "bombard").($unit->hasAttribute("bom") ? " + ".$unit->getAttribute("bom") : "")."<br>";
@@ -53,7 +54,7 @@ if (isset($_POST['command'])) {
 					$return .= "Range: ".getUnitStat($unit->getAttribute("type"), "range").($unit->hasAttribute("dst") ? " + ".$unit->getAttribute("dst") : "")."<br><br>";
 					$return .= "XP: ".($unit->hasAttribute("xp") ? $unit->getAttribute("xp") : 0)."/".getUnitStat($unit->getAttribute("type"), "levelXP");
 					$return .= "</span>";
-					$return .= ($unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health"))."/".getUnitStat($unit->getAttribute("type"), "health");
+					$return .= (($unit->hasAttribute("hp") ? $unit->getAttribute("hp") : getUnitStat($unit->getAttribute("type"), "health")) + ($unit->hasAttribute("hpInc") ? $unit->getAttribute("hpInc") : 0))." / ".getUnitStat($unit->getAttribute("type"), "health");
 				}
 				$return .= "</span></span>";
 			}
@@ -130,8 +131,11 @@ if (isset($_POST['command'])) {
 		$xp = $unit->getAttribute("xp");
 		$unit->setAttribute("xp", $xp - getUnitStat($type, "levelXP"));
 		$unit->setAttribute("type", getNextUnit($type)->getAttribute("name"));
-		if ($unit->hasAttribute("hp"))
+		if ($unit->hasAttribute("hp")) {
 			$unit->setAttribute("hp", $unit->getAttribute("hp") + limit(getUnitStat($unit->getAttribute("type"), "health") - getUnitStat($type, "health")));
+			if ($unit->getAttribute("hp") > getUnitStat($unit->getAttribute("type"), "health"))
+				$unit->removeAttribute("hp");
+		}
 		$dom->save($XML_FILE);
 		echo printBoard();
 	} else if (funcName() == "new") {
@@ -185,7 +189,7 @@ if (isset($_POST['command'])) {
 		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
 		
 		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "strength") - getUnitStat($unit2->getAttribute("type"), "defence") + ($unit1->hasAttribute("att") ? $unit1->getAttribute("att") : 0) - ($unit2->hasAttribute("def") ? $unit2->getAttribute("def") : 0)));
-		if ($unit2->getAttribute("hp") <= 0) {
+		if ($unit2->getAttribute("hp") + ($unit2->hasAttribute("hpInc") ? $unit2->getAttribute("hpInc") : 0) <= 0) {
 			//DESTROYED!
 			$tile2->removeChild($unit2);
 			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;
@@ -224,7 +228,7 @@ if (isset($_POST['command'])) {
 		$unit2 = $tile2->getElementsByTagName("unit")->item(0);
 		
 		$unit2->setAttribute("hp", ($unit2->hasAttribute("hp") ? $unit2->getAttribute("hp") : getUnitStat($unit2->getAttribute("type"), "health")) - limit(getUnitStat($unit1->getAttribute("type"), "bombard") - getUnitStat($unit2->getAttribute("type"), "resistance") + ($unit1->hasAttribute("bom") ? $unit1->getAttribute("bom") : 0) - ($unit2->hasAttribute("res") ? $unit2->getAttribute("res") : 0)));
-		if ($unit2->getAttribute("hp") <= 0) {
+		if ($unit2->getAttribute("hp") + ($unit2->hasAttribute("hpInc") ? $unit2->getAttribute("hpInc") : 0) <= 0) {
 			//DESTROYED!
 			$tile2->removeChild($unit2);
 			$xp = $unit1->hasAttribute("xp") ? $unit1->getAttribute("xp") : 0;

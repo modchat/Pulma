@@ -1,7 +1,7 @@
 .tile {
 	--width: 64px;
 	--height: 64px;
-	--popupRGBA: rgba(0, 0, 0, 0.35);
+	--popupRGBA: rgba(0, 0, 0, 0.85);
 	
 	display: inline-block;
 	width: var(--width);
@@ -11,6 +11,30 @@
 	border-style: solid;
 	border-width: 1px;
 	border-color: black;
+}
+
+.left {
+	background-color: cadetblue;
+}
+
+.right {
+	background-color: firebrick;
+}
+
+.move {
+	background-color: lawngreen;
+}
+
+.att {
+	background-color: red;
+}
+
+.bom {
+	background-color: orangered;
+}
+
+.no {
+	background-color: yellow;
 }
 
 .text {
@@ -33,9 +57,10 @@
 	position: absolute;
 	line-height: normal;
 	z-index: 1;
-	top: 104%;
+	top: 107.5%;
 	left: 50%;
 	margin-left: -60px;
+	pointer-events: none;
 }
 
 .text .stats::after {
@@ -43,8 +68,8 @@
 	position: absolute;
 	bottom: 100%;
 	left: 50%;
-	margin-left: -10px;
-	border-width: 10px;
+	margin-left: -15px;
+	border-width: 15px;
 	border-style: solid;
 	border-color: transparent transparent var(--popupRGBA) transparent;
 }

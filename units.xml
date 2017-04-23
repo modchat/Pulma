@@ -71,6 +71,24 @@
 		<attackXP>80</attackXP>
 		<bombardXP>20</bombardXP>
 		<destroyXP>180</destroyXP>
-		<levelXP>350</levelXP>
+		<levelXP>450</levelXP>
+	</unit>
+	<unit name="fatbird">
+		<short>FAT BIRD</short>
+		
+		<strength>10</strength>
+		<bombard>16</bombard>
+		<range>2</range>
+		
+		<health>20</health>
+		<resistance>14</resistance>
+		<defence>4</defence>
+		
+		<speed>4</speed>
+		
+		<attackXP>80</attackXP>
+		<bombardXP>120</bombardXP>
+		<destroyXP>220</destroyXP>
+		<levelXP>500</levelXP>
 	</unit>
 </path>
