@@ -78,11 +78,17 @@ if (isset($_POST['command'])) {
 		for ($h = 0; $h < $height; $h++) {
 			for ($w = 0; $w < $width; $w++) {
 				$tile = $board->appendChild($xml->createElement("tile"));
-				if (!!!random_int(0, 8)) {
+				if (!!!random_int(0, 4)) {
 					$unit = $tile->appendChild($xml->createElement("unit"));
 					$unit->setAttribute("type", "cat");
-					if (!!!random_int(0, 6)) {
+					if (!!!random_int(0, 2)) {
 						$unit->setAttribute("type", "dog");
+						if (!!!random_int(0, 3)) {
+							$unit->setAttribute("type", "bird");
+							if (!!!random_int(0, 2)) {
+								$unit->setAttribute("type", "eagle");
+							}
+						}
 					}
 				}
 			}
